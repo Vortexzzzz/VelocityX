@@ -1,0 +1,9 @@
+{
+  "name": "VelocityX",
+  "description": "The ultimate extreme sports companion app featuring AI trick analysis, skatepark mapping, and performance tracking.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
