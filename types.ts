@@ -13,8 +13,6 @@ export enum Sport {
   Skateboard = 'Skateboard',
   Scooter = 'Scooter',
   BMX = 'BMX', // Represents Bike/BMX
-  DirtJumper = 'Dirt Jumper',
-  DirtBike = 'Dirt Bike',
   MountainBike = 'Mountain Bike'
 }
 
@@ -24,6 +22,8 @@ export enum SubscriptionTier {
   Pro = 'Pro'
 }
 
+export type ExperienceLevel = 'Beginner' | 'Novice' | 'Expert' | 'Pro';
+
 export interface Trick {
   name: string;
   rank: Rank;
@@ -32,7 +32,7 @@ export interface Trick {
 
 export interface Activity {
   id: string;
-  type: 'trick' | 'session' | 'rankup';
+  type: 'trick' | 'session' | 'rankup' | 'challenge';
   title: string;
   subtitle: string;
   xp: number;
@@ -49,26 +49,66 @@ export interface Clip {
   likes: number;
   views: number;
   isPosted: boolean; // Is shared to profile
+  sport: Sport; // Add sport context to clips
+}
+
+export interface Challenge {
+    id: string;
+    title: string;
+    locationName: string;
+    description: string;
+    points: number;
+    difficulty: 'Easy' | 'Medium' | 'Hard' | 'Insane';
+    sport: Sport;
+}
+
+export type ThemeOption = 'default' | 'magma' | 'venom' | 'royal';
+export type FontOption = 'inter' | 'roboto' | 'poppins' | 'montserrat';
+
+// Data specific to one sport
+export interface SportStats {
+    currentRank: Rank;
+    rankProgress: number;
+    xp: number;
+    trickPoints: number;
+    tricksLogged: number;
+    completedTricks: string[];
 }
 
 export interface UserProfile {
   username: string;
   email: string;
   isLoggedIn: boolean;
-  selectedSports: Sport[];
+  
+  // Global Settings
+  activeSport: Sport; // The currently selected sport context
+  availableSports: Sport[]; // Sports the user has onboarded for
   subscription: SubscriptionTier;
-  currentRank: Rank;
-  rankProgress: number; // 0-100 within current rank
-  xp: number;
+  experienceLevel: ExperienceLevel; // New Field
+  
+  // Data separated by sport
+  sportProfiles: Record<Sport, SportStats>;
+
+  // Global Stats (Aggregated or Shared)
   sessionsCount: number;
-  tricksLogged: number;
-  completedTricks: string[]; // List of trick names completed
   recentActivity: Activity[];
-  clips: Clip[]; // All uploads
+  clips: Clip[]; 
   followers: number;
   following: number;
   bio: string;
-  // Tracked stats
+  friends: string[]; 
+  avatarUrl?: string;
+  bannerUrl?: string;
+  
+  // Theme Settings
+  theme: ThemeOption;
+  font: FontOption;
+  customBackgroundUrl?: string;
+
+  // Daily Challenge Tracking
+  dailyChallengesCompleted: number;
+  dailyChallengeDate: string; 
+  
   personalBests: {
     speed: number;
     airTime: number;

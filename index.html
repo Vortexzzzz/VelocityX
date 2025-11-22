@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VelocityX</title>
+    
+    <!-- Google Fonts Import -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Montserrat:wght@300;400;700;900&family=Poppins:wght@300;400;700;900&family=Roboto:wght@300;400;700;900&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -11,26 +17,53 @@
           extend: {
             colors: {
               vx: {
-                dark: '#0B0C15', // Deep background
-                panel: '#151621', // Panel background
-                accent: '#6366F1', // Primary purple/blue
-                accent2: '#3B82F6', // Secondary blue
+                dark: 'var(--vx-dark)', // Deep background
+                panel: 'var(--vx-panel)', // Panel background
+                accent: 'var(--primary-500)', // Primary mapped to variable
+                accent2: 'var(--secondary-500)', // Secondary mapped to variable
+              },
+              // Override standard colors to allow global theming
+              cyan: {
+                400: 'var(--primary-400)',
+                500: 'var(--primary-500)',
+                600: 'var(--primary-600)',
+              },
+              purple: {
+                400: 'var(--secondary-400)',
+                500: 'var(--secondary-500)',
+                600: 'var(--secondary-600)',
               }
             },
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['var(--app-font)', 'Inter', 'sans-serif'], // Dynamic font variable
             }
           }
         }
       }
     </script>
     <style>
+      :root {
+        /* Default Theme: Neon Cyber */
+        --vx-dark: #0B0C15;
+        --vx-panel: #151621;
+        
+        --primary-400: #22d3ee; /* Cyan 400 */
+        --primary-500: #06b6d4; /* Cyan 500 */
+        --primary-600: #0891b2; /* Cyan 600 */
+        
+        --secondary-400: #a78bfa; /* Purple 400 */
+        --secondary-500: #8b5cf6; /* Purple 500 */
+        --secondary-600: #7c3aed; /* Purple 600 */
+
+        --app-font: 'Inter', sans-serif;
+      }
+
       /* Custom scrollbar for clean look */
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0B0C15; 
+        background: var(--vx-dark); 
       }
       ::-webkit-scrollbar-thumb {
         background: #334155; 
@@ -40,8 +73,9 @@
         background: #475569; 
       }
       body {
-        background-color: #0B0C15;
+        background-color: var(--vx-dark);
         color: white;
+        font-family: var(--app-font); /* Apply dynamic font */
       }
     </style>
   <script type="importmap">

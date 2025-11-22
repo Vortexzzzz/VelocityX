@@ -1,4 +1,5 @@
-import { Rank, Sport, Trick } from './types';
+
+import { Rank, Sport, Trick, Challenge } from './types';
 
 export const SUBSCRIPTION_PLANS = [
   {
@@ -12,7 +13,7 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    price: '$1.50',
+    price: '$2.50', // Updated Price
     period: '/month',
     features: ['NO Ads', 'Ranking System', 'Skatepark Map', 'Speed/Air Time'],
     access: ['rank', 'map', 'perf'],
@@ -27,13 +28,69 @@ export const SUBSCRIPTION_PLANS = [
   }
 ];
 
+export const MOCK_CHALLENGES: Challenge[] = [
+    {
+        id: 'c1',
+        title: 'Stair Set Sesh',
+        locationName: 'Downtown Plaza',
+        description: 'Land a 360 down the main 5-stair set.',
+        points: 500,
+        difficulty: 'Medium',
+        sport: Sport.Skateboard
+    },
+    {
+        id: 'c2',
+        title: 'Bowl King',
+        locationName: 'Venice Beach Park',
+        description: 'Maintain speed for 30 seconds in the deep bowl without pushing.',
+        points: 300,
+        difficulty: 'Easy',
+        sport: Sport.BMX
+    },
+    {
+        id: 'c3',
+        title: 'Rail God',
+        locationName: 'Industrial Yards',
+        description: 'Grind the entire 20ft kinked rail.',
+        points: 1000,
+        difficulty: 'Hard',
+        sport: Sport.Scooter
+    },
+    {
+        id: 'c4',
+        title: 'The Gap',
+        locationName: 'University Library',
+        description: 'Clear the famous 12ft gap.',
+        points: 1500,
+        difficulty: 'Insane',
+        sport: Sport.Skateboard
+    },
+    {
+        id: 'c5',
+        title: 'Manual Madness',
+        locationName: 'Subway Station',
+        description: 'Manual across the entire platform pad.',
+        points: 400,
+        difficulty: 'Medium',
+        sport: Sport.Scooter
+    },
+    {
+        id: 'c7',
+        title: 'Enduro Climb',
+        locationName: 'Rocky Peak',
+        description: 'Climb the north face under 5 minutes.',
+        points: 600,
+        difficulty: 'Medium',
+        sport: Sport.MountainBike
+    }
+];
+
 // Databases based on prompt
 export const SCOOTER_TRICKS: Trick[] = [
   // Bronze
   { name: 'Bunny Hop', rank: Rank.Bronze, difficultyScore: 1 },
   { name: 'One Footer', rank: Rank.Bronze, difficultyScore: 2 },
   { name: 'One Hander', rank: Rank.Bronze, difficultyScore: 2 },
-  { name: 'Magnet', rank: Rank.Bronze, difficultyScore: 3 },
   { name: 'No Footer', rank: Rank.Bronze, difficultyScore: 3 },
   // Silver
   { name: '180', rank: Rank.Silver, difficultyScore: 15 },
@@ -127,9 +184,10 @@ export const SKATE_TRICKS: Trick[] = [
   { name: 'Heelflip', rank: Rank.Gold, difficultyScore: 35 },
   { name: '180', rank: Rank.Gold, difficultyScore: 32 },
   { name: 'Boardslide', rank: Rank.Gold, difficultyScore: 33 },
-  // Diamond (Skipped Platinum in prompt, mapping to Diamond as requested order)
-  { name: 'Inward Heelflip', rank: Rank.Diamond, difficultyScore: 70 },
-  { name: '360', rank: Rank.Diamond, difficultyScore: 72 },
+  // Platinum (Moved from Diamond to fix progression gap)
+  { name: 'Inward Heelflip', rank: Rank.Platinum, difficultyScore: 55 },
+  { name: '360', rank: Rank.Platinum, difficultyScore: 60 },
+  // Diamond
   { name: 'Double Kickflip', rank: Rank.Diamond, difficultyScore: 75 },
   { name: 'Impossible', rank: Rank.Diamond, difficultyScore: 78 },
   // Champion

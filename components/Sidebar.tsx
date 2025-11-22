@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Home, Trophy, Map, Zap, User, LogOut, Film } from 'lucide-react';
+import { Home, Trophy, Map, Zap, User, LogOut, Film, Users, Search, Crown, Info } from 'lucide-react';
 import { SubscriptionTier } from '../types';
 
 interface SidebarProps {
@@ -14,7 +14,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, subscription
   const navItems = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'rank', icon: Trophy, label: 'Ranking' },
+    { id: 'challenges', icon: Crown, label: 'Challenges' },
+    { id: 'learn', icon: Search, label: 'Learn Tricks' },
     { id: 'clips', icon: Film, label: 'Clips' },
+    { id: 'friends', icon: Users, label: 'Friends' },
     { id: 'map', icon: Map, label: 'Skateparks' },
     { id: 'perf', icon: Zap, label: 'Speed/Air' },
     { id: 'profile', icon: User, label: 'Profile' },
@@ -30,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, subscription
       </div>
 
       {/* Nav Items */}
-      <div className="flex-1 flex flex-col gap-8 w-full px-2">
+      <div className="flex-1 flex flex-col gap-8 w-full px-2 overflow-y-auto no-scrollbar">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -51,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, subscription
               )}
 
               {/* Tooltip */}
-              <div className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700">
+              <div className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700 shadow-xl">
                 {item.label}
               </div>
             </button>
@@ -59,13 +62,30 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, subscription
         })}
       </div>
 
-      {/* Logout */}
-      <button 
-        onClick={onLogout}
-        className="mt-auto text-gray-600 hover:text-red-400 transition-colors p-3"
-      >
-        <LogOut size={20} />
-      </button>
+      {/* Bottom Actions */}
+      <div className="mt-auto flex flex-col gap-4 w-full px-2">
+          <button 
+            onClick={() => setActiveTab('about')}
+            className={`flex items-center justify-center w-full p-3 rounded-xl transition-all duration-300 group ${
+                activeTab === 'about' ? 'text-cyan-400 bg-gray-900' : 'text-gray-600 hover:text-white'
+            }`}
+            title="About Me"
+          >
+            <Info size={20} />
+             {/* Tooltip */}
+             <div className="absolute left-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700 shadow-xl">
+                About
+              </div>
+          </button>
+
+          <button 
+            onClick={onLogout}
+            className="text-gray-600 hover:text-red-400 transition-colors p-3 flex items-center justify-center"
+            title="Log Out"
+          >
+            <LogOut size={20} />
+          </button>
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Play, Square, Plus, Timer, Zap, ArrowUp } from 'lucide-react';
+import { Play, Square, Plus, Timer, Zap, ArrowUp, AlertCircle } from 'lucide-react';
 
 interface PerformanceProps {
     onSessionComplete?: (session: { duration: string, maxSpeed: string, maxHeight: string }) => void;
@@ -14,14 +14,41 @@ const Performance: React.FC<PerformanceProps> = ({ onSessionComplete }) => {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [timer, setTimer] = useState(0);
   const [data, setData] = useState<{time: number, speed: number, height: number}[]>([]);
-  // Fixed type definition for browser environment
+  
+  // Real Sensor Data Refs
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const gpsWatchIdRef = useRef<number | null>(null);
+  const currentSpeedRef = useRef(0);
+  const maxJumpHeightRef = useRef(0); // Highest jump detected in the current second interval
+  
+  // Air Time Calculation Refs
+  const currentAirTimeStartRef = useRef<number | null>(null);
 
   // Goals
   const [speedGoal, setSpeedGoal] = useState(25); // km/h
   const [heightGoal, setHeightGoal] = useState(1.5); // meters
 
-  const startRecording = (delay: number) => {
+  // Cleanup sensors on unmount
+  useEffect(() => {
+      return () => {
+          stopSensors();
+      };
+  }, []);
+
+  const startRecording = async (delay: number) => {
+    // Request permissions for iOS 13+ devices
+    if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+        try {
+            const permissionState = await (DeviceMotionEvent as any).requestPermission();
+            if (permissionState !== 'granted') {
+                alert('Motion permissions are required to track Air Time.');
+                return;
+            }
+        } catch (e) {
+            console.error("Permission request failed", e);
+        }
+    }
+
     setCountdown(delay);
     let count = delay;
     const interval = setInterval(() => {
@@ -36,23 +63,106 @@ const Performance: React.FC<PerformanceProps> = ({ onSessionComplete }) => {
     }, 1000);
   };
 
+  const handleMotion = (event: DeviceMotionEvent) => {
+    if (!event.accelerationIncludingGravity) return;
+    const { x, y, z } = event.accelerationIncludingGravity;
+    if (x === null || y === null || z === null) return;
+
+    // Magnitude of acceleration vector including gravity
+    const magnitude = Math.sqrt(x*x + y*y + z*z);
+
+    // FREEFALL DETECTION:
+    // Gravity is ~9.8 m/s². When in freefall (air time), the accelerometer reading drops significantly 
+    // because the device is falling with gravity.
+    // Threshold set to 3.0 to account for sensor noise and rotation.
+    const FREEFALL_THRESHOLD = 3.0; 
+
+    if (magnitude < FREEFALL_THRESHOLD) {
+        // We are in the air
+        if (currentAirTimeStartRef.current === null) {
+            currentAirTimeStartRef.current = Date.now();
+        }
+    } else {
+        // We are on the ground (or landing impact)
+        if (currentAirTimeStartRef.current !== null) {
+            const airTimeDuration = (Date.now() - currentAirTimeStartRef.current) / 1000; // seconds
+            
+            // Filter out very short blips (sensor noise)
+            if (airTimeDuration > 0.25) {
+                // Estimate Height: h = 1/2 * g * (t/2)^2 
+                // Simplified for a jump arc: h approx 1.225 * t^2
+                const estimatedHeight = 1.225 * Math.pow(airTimeDuration, 2);
+                
+                // Update the max height ref for the current interval if this jump was higher
+                if (estimatedHeight > maxJumpHeightRef.current) {
+                    maxJumpHeightRef.current = estimatedHeight;
+                }
+            }
+            currentAirTimeStartRef.current = null;
+        }
+    }
+  };
+
+  const handleGPS = (position: GeolocationPosition) => {
+      // Speed is returned in meters/second. Convert to km/h.
+      if (position.coords.speed !== null) {
+          currentSpeedRef.current = position.coords.speed * 3.6;
+      }
+  };
+
   const beginSession = () => {
     setTimer(0);
     setData([]);
+    currentSpeedRef.current = 0;
+    maxJumpHeightRef.current = 0;
+    currentAirTimeStartRef.current = null;
+
+    // 1. Start GPS Tracking
+    if (navigator.geolocation) {
+        gpsWatchIdRef.current = navigator.geolocation.watchPosition(
+            handleGPS, 
+            (err) => console.warn("GPS Error:", err), 
+            { enableHighAccuracy: true, maximumAge: 0 }
+        );
+    }
+
+    // 2. Start Motion Tracking
+    window.addEventListener('devicemotion', handleMotion);
+
+    // 3. Start Data Logging Loop
     timerRef.current = setInterval(() => {
       setTimer(t => t + 1);
-      // Simulate sensor data since we are in a web browser without physics engine
+      
+      // Read latest values from refs
+      const speed = currentSpeedRef.current;
+      
+      // Get the highest jump recorded in the last second, then reset it
+      const height = maxJumpHeightRef.current;
+      maxJumpHeightRef.current = 0; 
+
       setData(prev => [...prev, {
         time: prev.length,
-        speed: Math.max(0, Math.random() * 30 + (Math.sin(prev.length / 5) * 10)),
-        height: Math.max(0, Math.random() * 2 * (Math.random() > 0.8 ? 1 : 0)) // Random jumps
+        speed: speed,
+        height: height
       }]);
     }, 1000);
   };
 
+  const stopSensors = () => {
+      if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+      }
+      if (gpsWatchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(gpsWatchIdRef.current);
+          gpsWatchIdRef.current = null;
+      }
+      window.removeEventListener('devicemotion', handleMotion);
+  };
+
   const stopRecording = () => {
     setIsRecording(false);
-    if (timerRef.current) clearInterval(timerRef.current);
+    stopSensors();
     
     if (onSessionComplete) {
         const duration = formatTime(timer);
@@ -110,16 +220,21 @@ const Performance: React.FC<PerformanceProps> = ({ onSessionComplete }) => {
            </div>
 
            {!isRecording ? (
-             <div className="flex gap-4 relative z-10">
-               {[3, 5, 10].map(sec => (
-                 <button 
-                   key={sec}
-                   onClick={() => startRecording(sec)}
-                   className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-600/20"
-                 >
-                   <Play size={18} /> {sec}s
-                 </button>
-               ))}
+             <div className="flex flex-col items-center gap-4 relative z-10 w-full">
+               <div className="flex gap-4">
+                {[3, 5, 10].map(sec => (
+                    <button 
+                    key={sec}
+                    onClick={() => startRecording(sec)}
+                    className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-600/20"
+                    >
+                    <Play size={18} /> {sec}s
+                    </button>
+                ))}
+               </div>
+               <p className="text-xs text-gray-500 flex items-center gap-1">
+                   <AlertCircle size={12} /> Requires GPS & Accelerometer
+               </p>
              </div>
            ) : (
              <button 
@@ -134,7 +249,7 @@ const Performance: React.FC<PerformanceProps> = ({ onSessionComplete }) => {
         {/* Live Stats */}
         <div className="bg-vx-panel p-8 rounded-3xl border border-gray-800 grid grid-cols-2 gap-4 shadow-lg">
            <div className="col-span-2 mb-2 text-gray-400 uppercase text-xs font-bold tracking-wider flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Live Metrics
+                <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span> Live Metrics
            </div>
            
            <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
@@ -215,6 +330,12 @@ const Performance: React.FC<PerformanceProps> = ({ onSessionComplete }) => {
               </AreaChart>
             </ResponsiveContainer>
          </div>
+      </div>
+      
+      <div className="text-center mt-12 pt-8 border-t border-gray-800">
+          <p className="text-gray-500 text-sm">
+              Want to change what you're riding? Check <span className="text-cyan-400 font-bold">Settings</span> to switch sports.
+          </p>
       </div>
     </div>
   );

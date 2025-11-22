@@ -1,23 +1,30 @@
+
 import React, { useState } from 'react';
-import { Sport, SubscriptionTier } from '../types';
+import { Sport, SubscriptionTier, ExperienceLevel } from '../types';
 import { SUBSCRIPTION_PLANS } from '../constants';
-import { Check, Bike, Component, Flame } from 'lucide-react';
+import { Check, Bike, Component, Flame, Star, Award, Zap } from 'lucide-react';
 
 interface OnboardingProps {
-  onComplete: (sports: Sport[], sub: SubscriptionTier) => void;
+  onComplete: (sports: Sport[], sub: SubscriptionTier, experience: ExperienceLevel) => void;
 }
 
 const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [selectedSports, setSelectedSports] = useState<Sport[]>([]);
+  const [experience, setExperience] = useState<ExperienceLevel | null>(null);
   
   const sportsList = [
     { id: Sport.Skateboard, label: 'Skateboard', icon: '🛹' },
     { id: Sport.Scooter, label: 'Scooter', icon: '🛴' },
     { id: Sport.BMX, label: 'BMX', icon: '🚲' },
-    { id: Sport.DirtJumper, label: 'Dirt Jumper', icon: '🚵' },
-    { id: Sport.DirtBike, label: 'Dirt Bike', icon: '🏍️' },
     { id: Sport.MountainBike, label: 'Mountain Bike', icon: '🏔️' },
+  ];
+
+  const experienceLevels: { id: ExperienceLevel, label: string, desc: string, icon: any }[] = [
+      { id: 'Beginner', label: 'Beginner', desc: 'Just starting out. Learning the basics.', icon: Star },
+      { id: 'Novice', label: 'Novice', desc: 'Can do a few tricks. Getting comfortable.', icon: Component },
+      { id: 'Expert', label: 'Expert', desc: 'Skilled rider. Competing locally.', icon: Award },
+      { id: 'Pro', label: 'Pro', desc: 'Top tier. Sponsored or aiming for it.', icon: Zap },
   ];
 
   const toggleSport = (sport: Sport) => {
@@ -29,12 +36,14 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   };
 
   const handleSubscriptionSelect = (subId: string) => {
+    if (!experience) return;
     let tier = SubscriptionTier.Free;
     if (subId === 'premium') tier = SubscriptionTier.Premium;
     if (subId === 'pro') tier = SubscriptionTier.Pro;
-    onComplete(selectedSports, tier);
+    onComplete(selectedSports, tier, experience);
   };
 
+  // Step 1: Sport Selection
   if (step === 1) {
     return (
       <div className="min-h-screen bg-vx-dark flex flex-col items-center justify-center p-6">
@@ -44,7 +53,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           </h1>
           <p className="text-gray-400 text-xl mb-12">Select all the sports you participate in.</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
             {sportsList.map((sport) => (
               <button
                 key={sport.id}
@@ -82,9 +91,66 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
     );
   }
 
+  // Step 2: Experience Level
+  if (step === 2) {
+      return (
+        <div className="min-h-screen bg-vx-dark flex flex-col items-center justify-center p-6">
+            <div className="max-w-4xl w-full text-center animate-fade-in">
+                <h1 className="text-4xl md:text-5xl font-black text-white mb-6">
+                    How <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">Experienced</span> are you?
+                </h1>
+                <p className="text-gray-400 text-xl mb-12">This helps us tailor your starting rank and challenges.</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 max-w-2xl mx-auto">
+                    {experienceLevels.map((level) => (
+                        <button
+                            key={level.id}
+                            onClick={() => setExperience(level.id)}
+                            className={`relative p-6 rounded-2xl border-2 transition-all duration-300 flex items-center gap-6 text-left group
+                            ${experience === level.id
+                                ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] scale-105' 
+                                : 'border-gray-800 bg-gray-900/50 hover:border-gray-600 hover:bg-gray-800'}`}
+                        >
+                            <div className={`p-4 rounded-full ${experience === level.id ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-500 group-hover:text-white'}`}>
+                                <level.icon size={24} />
+                            </div>
+                            <div>
+                                <h3 className={`font-bold text-lg ${experience === level.id ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                                    {level.label}
+                                </h3>
+                                <p className="text-gray-500 text-sm">{level.desc}</p>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-4 justify-center">
+                    <button
+                        onClick={() => setStep(1)}
+                        className="px-8 py-4 rounded-xl font-bold text-gray-500 hover:text-white transition-colors"
+                    >
+                        Back
+                    </button>
+                    <button
+                        onClick={() => experience && setStep(3)}
+                        disabled={!experience}
+                        className={`px-12 py-4 rounded-xl font-bold text-lg transition-all
+                        ${experience 
+                            ? 'bg-white text-black hover:scale-105 shadow-xl' 
+                            : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}
+                    >
+                        Next Step
+                    </button>
+                </div>
+            </div>
+        </div>
+      );
+  }
+
+  // Step 3: Subscription
   return (
     <div className="min-h-screen bg-vx-dark flex flex-col items-center justify-center p-6">
-      <div className="max-w-6xl w-full">
+      <div className="max-w-6xl w-full animate-fade-in">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-black text-white mb-4">Select Your Plan</h1>
           <p className="text-gray-400">Unlock your full potential with premium features.</p>
@@ -135,6 +201,12 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               </button>
             </div>
           ))}
+        </div>
+        
+        <div className="text-center mt-12">
+             <button onClick={() => setStep(2)} className="text-gray-500 hover:text-white text-sm">
+                 Back to Experience Level
+             </button>
         </div>
       </div>
     </div>
